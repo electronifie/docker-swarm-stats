@@ -2,12 +2,26 @@
 
 console.log("\033[2J\033[1;1H")
 
-var Docker = require('dockerode');
-var docker = new Docker({ host: process.argv[2], port: process.argv[3] });
+const Docker = require('dockerode');
+const program = require('commander');
+
+
+program
+  .version('1.0')
+  .option('-p, --port <port>', 'Port')
+  .option('-h, --hostname <hostname>', 'Server hostname')
+  .parse(process.argv);
+
+// Handle arguments
+const hostname = program.hostname ? program.hostname : "localhost";
+const port = program.port ? program.port : 27017;
+
+const docker = new Docker({ host: hostname, port: port });
 
 var nodes = [];
 var services = [];
 
+// Lost our default SIGINT handler...ANSI terminal characters ftw
 process.on('SIGINT', function() {
   process.exit(0);
 });
