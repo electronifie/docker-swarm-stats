@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
-console.log("\033[2J\033[1;1H")
-
 const Docker = require('dockerode');
 const program = require('commander');
 
+const getNodes = require('./lib/nodes');
+const getServices = require('./lib/services');
+const formatOutput = require('./lib/formatOutput');
+
+function clear() { console.log("\033[2J\033[1;1H"); }
 
 program
   .version('1.0')
@@ -14,12 +17,10 @@ program
 
 // Handle arguments
 const hostname = program.hostname ? program.hostname : "localhost";
-const port = program.port ? program.port : 27017;
+const port = program.port ? program.port : 2375;
 
+// Only supporting HTTP connections right now, not for any real reason.
 const docker = new Docker({ host: hostname, port: port });
-
-var nodes = [];
-var services = [];
 
 // Lost our default SIGINT handler...ANSI terminal characters ftw
 process.on('SIGINT', function() {
@@ -27,44 +28,30 @@ process.on('SIGINT', function() {
 });
 
 function work() {
-  docker.listNodes((err, res) => {
-    nodes = !res ? [] : res.map((e) => {
-      return {
-        hostname: e.Description.Hostname,
-        memory: e.Description.Resources.MemoryBytes / 1024. / 1024.,
-        labels: e.Description.Engine.Labels,
-        role: e.Spec.Role
-      };
-    });
+  getNodes(docker, (err, res) => {
+    if (err) throw new Error(err);
 
-    docker.listServices((err, res) => {
-      services = !res ? [] : res.map((e) => {
-        return { 
-          id: e.ID,
-          name: e.Spec.Name,
-          replicas: e.Spec.Mode.Replicated.Replicas
-        };
-      });
+    let nodes = res;
 
-      console.log("\033[2J\033[1;1H")
+    getServices(docker, (err, res) => {
+      if (err) throw new Error(err);
 
-      node = nodes.sort((x, y) => x.hostname > y.hostname);
+      clear();
+      
+      let services = res;
+
+      nodes.sort((x, y) => x.hostname > y.hostname);
+
       console.log("Nodes =>");
-      console.log(nodes.map((e) => {
-        return `Hostname: ${e.hostname}\tRole: ${e.role}\tLabels: ` + 
-          Object.keys(e.labels).map((k) => `${k}=${e.labels[k]}`).join(", ")
-      }).join("\n"));
-      console.log("");
+      console.log(formatOutput.formatNodes(nodes) + "\n");
 
       console.log("Services =>");
-      console.log(services.map((e) => {
-        return `Service: ${e.name}\t\tReplicas: ${e.replicas}\tID: ${e.id}`;
-      }).join("\n"));
-
-
+      console.log(formatOutput.formatServices(services) + "\n");
     });
   });
 }
 
+clear();
+work();
 setInterval(work, 1000)
 
