@@ -3,6 +3,7 @@
 const Docker = require('dockerode');
 const program = require('commander');
 
+const getContainers = require('./lib/containers');
 const getNodes = require('./lib/nodes');
 const getServices = require('./lib/services');
 const formatOutput = require('./lib/formatOutput');
@@ -33,25 +34,35 @@ function work() {
 
     let nodes = res;
 
-    getServices(docker, (err, res) => {
+    getContainers(nodes, port, (err, res) => {
       if (err) throw new Error(err);
 
-      clear();
-      
-      let services = res;
+      let containers = res;
+      console.log(containers);
 
-      nodes.sort((x, y) => x.hostname > y.hostname);
+      getServices(docker, (err, res) => {
+        if (err) throw new Error(err);
 
-      console.log("Nodes =>");
-      console.log(formatOutput.formatNodes(nodes) + "\n");
+        clear();
+        
+        let services = res;
 
-      console.log("Services =>");
-      console.log(formatOutput.formatServices(services) + "\n");
+        nodes.sort((x, y) => x.hostname > y.hostname);
+
+        console.log("Nodes =>");
+        console.log(formatOutput.formatNodes(nodes) + "\n");
+
+        console.log("Services =>");
+        console.log(formatOutput.formatServices(services) + "\n");
+
+        console.log("Containers =>");
+        console.log(formatOutput.formatContainers(containers) + "\n");
+      });
     });
   });
 }
 
 clear();
 work();
-setInterval(work, 1000)
+setInterval(work, process.env.REFRESH_TIME || 1000);
 

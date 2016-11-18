@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async": "^2.1.2",
     "commander": "^2.9.0",
     "dockerode": "^2.3.1"
   }
