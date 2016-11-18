@@ -12,13 +12,15 @@ function clear() { console.log("\033[2J\033[1;1H"); }
 
 program
   .version('1.0')
-  .option('-p, --port <port>', 'Port')
   .option('-h, --hostname <hostname>', 'Server hostname')
+  .option('-p, --port <port>', 'Port')
+  .option('-r, --refresh-time <refreshTime>', 'Refresh time')
   .parse(process.argv);
 
 // Handle arguments
 const hostname = program.hostname ? program.hostname : "localhost";
 const port = program.port ? program.port : 2375;
+const refreshTime = program.refreshTime ? program.refreshTime : 5000;
 
 // Only supporting HTTP connections right now, not for any real reason.
 const docker = new Docker({ host: hostname, port: port });
@@ -64,5 +66,5 @@ function work() {
 
 clear();
 work();
-setInterval(work, process.env.REFRESH_TIME || 1000);
+setInterval(work, refreshTime);
 
