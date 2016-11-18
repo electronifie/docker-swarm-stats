@@ -8,6 +8,10 @@ var docker = new Docker({ host: process.argv[2], port: process.argv[3] });
 var nodes = [];
 var services = [];
 
+process.on('SIGINT', function() {
+  process.exit(0);
+});
+
 function work() {
   docker.listNodes((err, res) => {
     nodes = !res ? [] : res.map((e) => {
