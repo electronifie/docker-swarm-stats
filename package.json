@@ -11,6 +11,8 @@
   "dependencies": {
     "async": "^2.1.2",
     "commander": "^2.9.0",
-    "dockerode": "^2.3.1"
+    "dockerode": "^2.3.1",
+    "event-stream": "^3.3.4",
+    "superagent": "^3.0.0"
   }
 }
