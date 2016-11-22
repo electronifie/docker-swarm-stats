@@ -49,8 +49,11 @@ term.on( 'key' , function(name, matches, data ) {
 
 function drawScreen(data) {
   let [ height, width ] = [ term.height, term.width ];
- 
-  // header summary
+  let availableRows = height - 7; // 7 rows of headers/spacing
+
+  data.nodes.sort((x, y) => x.hostname > y.hostname);
+
+  // Header summary
   term
     .clear()
     .moveTo(1, 1)
@@ -73,18 +76,18 @@ function drawScreen(data) {
     .styleReset()
     .defaultColor(data.containers.length);
 
-  // nodes header
+  // Nodes header
   term
     .blue()
     .bold("\n\n=== Nodes === ")
     .styleReset();
 
   // Print at most 10 nodes
-  for (let i = 0; i < 10 && i < data.nodes.length; i++) {
+  for (let i = 0; i < 10 && i < data.nodes.length && i < availableRows; i++, availableRows--) {
     term
       .bold("\nHostname: ")
       .styleReset()
-      .defaultColor(padTrim(data.nodes[i].hostname, 10))
+      .defaultColor(padTrim(data.nodes[i].hostname, 16))
       .bold("   Memory: ")
       .styleReset()
       .defaultColor(padTrim(data.nodes[i].memory + "mb", 10))
@@ -96,14 +99,14 @@ function drawScreen(data) {
       .defaultColor(Object.keys(data.nodes[i].labels).map((k) => `${k}=${data.nodes[i].labels[k]}`).join(", "));
   }
 
-  // services header
+  // Services header
   term
     .magenta()
     .bold("\n\n=== Services === ")
     .styleReset();
 
   // Print at most 10 services
-  for (let i = 0; i < 10 && i < data.services.length; i++) {
+  for (let i = 0; i < 10 && i < data.services.length && i < availableRows; i++, availableRows--) {
     term
       .bold("\nName: ")
       .styleReset()
@@ -114,10 +117,10 @@ function drawScreen(data) {
   }
 
 
-  // update with cpu/memory stats
-  for (let i = 0; i < data.containers.length; i++) {
+  // Update with cpu/memory stats - up to remaining rows
+  for (let i = 0; i < data.containers.length && i < availableRows; i++) {
     data.containers[i].cpu = 
-        statsCollector.stats[data.containers[i].id].cpuPercent > 0.
+        isFinite(statsCollector.stats[data.containers[i].id].cpuPercent)
       ? statsCollector.stats[data.containers[i].id].cpuPercent
       : 0.
 
@@ -125,12 +128,11 @@ function drawScreen(data) {
         statsCollector.stats[data.containers[i].id].memory
       ? statsCollector.stats[data.containers[i].id].memory.total / 1024 / 1024
       : 0.00;
-
   }
 
   data.containers.sort((x, y) => x.cpu < y.cpu);
 
-  // containers header
+  // Containers header
   term
     .cyan()
     .bold("\n\n=== Containers === ")
@@ -154,7 +156,7 @@ function drawScreen(data) {
       .bold("   CPU%: ")
       .styleReset()
       .defaultColor(padTrim(String(data.containers[i].cpu), 10))
-      .bold("   Memory%: ")
+      .bold("   Memory: ")
       .styleReset()
       .defaultColor(data.containers[i].memory.toFixed(2) + "mb")
   }
